@@ -1,0 +1,6 @@
+desc=Partitions on Local Disks
+os_support=freebsd
+category=hardware
+depends=mount fdisk 2.620
+longdesc=Create and edit paritions on local SCSI and IDE disks on FreeBSD.
+version=2.620
