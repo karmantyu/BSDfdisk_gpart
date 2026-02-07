@@ -619,27 +619,10 @@ sub create_slice {
         return undef;
     }
     else {
-        my %allowed = map { $_ => 1 } fdisk::list_tags();
-        return $text{'nslice_etype'}
-          unless ( defined $slice->{'type'} && $allowed{ $slice->{'type'} } );
-        $cmd = "fdisk -a";
-        my $sn = _safe_uint( $slice->{'number'} );
-        my $sb = _safe_uint( $slice->{'startblock'} );
-        my $bl = _safe_uint( $slice->{'blocks'} );
-        $cmd .= " -s $sn" if defined $sn;
-        $cmd .= " -b $sb" if defined $sb;
-        $cmd .= " -s $bl" if defined $bl;
-        $cmd .= " -t $slice->{'type'} " . quote_path( $disk->{'device'} );
-        my $out = backquote_command("$cmd 2>&1");
-
-        if ($?) {
-            return $out;
-        }
-
-        # Populate device field
-        my $base = disk_name( $disk->{'device'} );
-        $slice->{'device'} = "/dev/${base}s" . $slice->{'number'};
-        return undef;
+        # FreeBSD's base fdisk(8) doesn't support the non-interactive flags
+        # this module would need for safe create/modify/delete operations.
+        # Avoid guessing and potentially corrupting partition tables.
+        return "Slice creation requires gpart";
     }
 }
 
@@ -661,11 +644,7 @@ sub delete_slice {
         return ($?) ? $out : undef;
     }
     else {
-        my $sn = _safe_uint( $slice->{'number'} );
-        return $text{'slice_egone'} unless defined $sn;
-        $cmd = "fdisk -d " . $sn . " " . quote_path( $disk->{'device'} );
-        my $out = backquote_command("$cmd 2>&1");
-        return ($?) ? $out : undef;
+        return "Slice deletion requires gpart";
     }
 }
 
@@ -720,18 +699,7 @@ sub modify_slice {
         return ($?) ? $out : undef;
     }
     else {
-        my $sn = _safe_uint( $slice->{'number'} );
-        return $text{'slice_egone'} unless defined $sn;
-        my %allowed = map { $_ => 1 } fdisk::list_tags();
-        return $text{'nslice_etype'}
-          unless ( defined $slice->{'type'} && $allowed{ $slice->{'type'} } );
-        $cmd =
-            "fdisk -a -s "
-          . $sn . " -t "
-          . $slice->{'type'} . " "
-          . quote_path( $disk->{'device'} );
-        my $out = backquote_command("$cmd 2>&1");
-        return ($?) ? $out : undef;
+        return "Slice modification requires gpart";
     }
 }
 
